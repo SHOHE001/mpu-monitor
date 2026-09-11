@@ -130,11 +130,12 @@ class Monitor:
                 label.pack(fill="x")
                 axes.append(label)
             self.values.append(axes)
+        # Reserve the status footer before expandable plots, including at minimum size.
+        self.footer = tk.Label(root, text="加速度は重力を含みます。ジャイロは未校正です。", bg=BG, fg=MUTED, anchor="w")
+        self.footer.pack(side="bottom", fill="x", padx=24, pady=12)
         self.plots = (Plot(root, "加速度", "g", 1.2), Plot(root, "ジャイロ", "°/s", 5))
         for plot in self.plots:
             plot.pack(fill="both", expand=True, padx=24, pady=(12, 0))
-        self.footer = tk.Label(root, text="加速度は重力を含みます。ジャイロは未校正です。", bg=BG, fg=MUTED, anchor="w")
-        self.footer.pack(fill="x", padx=24, pady=12)
         self.refresh_ports()
         self.root.after(50, self.tick)
         if port:
