@@ -1,0 +1,16 @@
+name: Blocker
+description: Record three unsuccessful attempts at an unresolved problem
+labels: [blocked]
+body:
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Problem, impact, three hypotheses, checks and results
+    validations:
+      required: true
+  - type: textarea
+    id: resume
+    attributes:
+      label: Required input or evidence to resume; independent work
+    validations:
+      required: true
