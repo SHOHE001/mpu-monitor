@@ -1,0 +1,9 @@
+name: Feature
+description: Propose a scoped improvement
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal and acceptance criteria
+    validations:
+      required: true
