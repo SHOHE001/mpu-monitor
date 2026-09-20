@@ -11,7 +11,7 @@ from tkinter import ttk
 import serial
 from serial.tools import list_ports
 
-from protocol import parse_message, stream_status
+from protocol import MAX_LINE_BYTES, MessageStream, stream_status
 
 BG, PANEL, FG, MUTED = "#111827", "#1f2937", "#f3f4f6", "#9ca3af"
 COLORS = ("#60a5fa", "#34d399", "#fbbf24")
@@ -38,17 +38,11 @@ class SerialReader(threading.Thread):
                     device.port = self.port
                     device.open()
                     self.emit("open")
-                    buffer = bytearray()
+                    stream = MessageStream()
                     while not self.stop_event.is_set():
-                        buffer.extend(device.read(min(max(device.in_waiting, 1), 4096)))
-                        while b"\n" in buffer:
-                            raw, _, rest = buffer.partition(b"\n")
-                            buffer = bytearray(rest)
-                            msg = parse_message(raw)
-                            if msg:
-                                self.emit("message", msg)
-                        if len(buffer) > 4096:
-                            buffer.clear()
+                        chunk = device.read(min(max(device.in_waiting, 1), MAX_LINE_BYTES))
+                        for message in stream.feed(chunk):
+                            self.emit("message", message)
             except (serial.SerialException, OSError) as exc:
                 self.emit("port_error", str(exc))
             if self.stop_event.wait(1):

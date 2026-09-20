@@ -16,7 +16,9 @@ seq/ms/errorsはESP32起動後。msは32bitのmillis()で周回します。PCは
 
 sensor_not_readyは未検出・未対応識別値・初期化失敗。i2c_read_failedは読み取り失敗または識別値不一致。失敗後は再初期化を試行。
 
-PCは不正JSON・ブートログ・未対応バージョン・非有限数・不正配列を表示対象から除外します。
+PCは不正JSON・ブートログ・未対応バージョン・非有限数・浮動小数点で扱えない巨大整数・不正配列を表示対象から除外します。vは整数の1のみを受け付けます。
+
+PC側の行長上限は改行LFを除いて4096バイトです。上限を超えた行は次の改行まで全体を読み捨て、その次の行から通常の受信に戻ります。不正な行を受信しても接続は継続します。
 
 参照:
 - [Espressif Wire API](https://docs.espressif.com/projects/arduino-esp32/en/latest/api/i2c.html)
