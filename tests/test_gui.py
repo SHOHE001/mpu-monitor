@@ -1,4 +1,5 @@
 """GUI error and recovery behavior without connected hardware."""
+import math
 import queue
 import time
 import unittest
@@ -21,10 +22,27 @@ class GuiTests(unittest.TestCase):
         self.app.reader = None
         self.app.close()
 
-    def sample(self):
-        self.app.events.put(('message', dict(type='sample', who=0x70, address=0x68,
-                            accel=[0, 0, 1], gyro=[0, 0, 0], errors=0), time.monotonic()))
+    def sample(self, **updates):
+        sample = dict(type='sample', who=0x70, address=0x68,
+                      accel=[0, 0, 1], gyro=[0, 0, 0], errors=0)
+        sample.update(updates)
+        self.app.events.put(('message', sample, time.monotonic()))
         self.app.tick()
+
+    def test_extreme_finite_samples_do_not_stop_updates_or_overflow_plot_scale(self):
+        self.sample(accel=[10**300, 0, 1])
+        self.assertIn('受信中', self.app.status.cget('text'))
+        self.sample(accel=[1.7e308, -1.7e308, 1.7e308], gyro=[1.7e308, 0, 0])
+        for plot in self.app.plots:
+            for item in plot.find_all():
+                if plot.type(item) == 'text':
+                    text = plot.itemcget(item, 'text').lower()
+                    self.assertNotIn('inf', text)
+                    self.assertNotIn('nan', text)
+                self.assertTrue(all(math.isfinite(v) for v in plot.coords(item)))
+        self.assertNotIn('inf', self.app.info.cget('text'))
+        self.sample()
+        self.assertIn('+1.000', self.app.values[0][2].cget('text'))
 
     def test_sensor_error_clears_values_and_valid_sample_recovers(self):
         self.sample()

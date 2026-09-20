@@ -58,7 +58,10 @@ class Plot(tk.Canvas):
         self.delete("all")
         width, height = max(self.winfo_width(), 200), max(self.winfo_height(), 150)
         left, right, top, bottom = 58, width - 20, 38, height - 28
-        limit = max(self.minimum, max((abs(v) for _, values in points for v in values), default=0) * 1.15)
+        largest = max((abs(v) for _, values in points for v in values), default=0)
+        limit = max(self.minimum, largest * 1.15)
+        if not math.isfinite(limit):
+            limit = largest  # Near the float limit, omit padding instead of overflowing.
         self.create_text(15, 17, anchor="w", text=f"{self.title}  /  {self.unit}", fill=FG, font=("Yu Gothic UI", 11, "bold"))
         for i, axis in enumerate("XYZ"):
             self.create_text(right - 100 + i * 40, 17, text=axis, fill=COLORS[i])
@@ -203,8 +206,9 @@ class Monitor:
                             for axis, label, number in zip("XYZ", labels, value[key]):
                                 label.configure(text=f"{axis}  {number:+9.3f}")
                         model = "MPU6500相当" if value["who"] == 0x70 else "MPU6050相当"
-                        norm = math.sqrt(sum(v*v for v in value["accel"]))
-                        self.info.configure(text=f"{model}  ·  ID 0x{value['who']:02X}  ·  I²C 0x{value['address']:02X}  ·  加速度合計 {norm:.3f} g")
+                        norm = math.hypot(*value["accel"])
+                        norm_text = f"{norm:.3f} g" if math.isfinite(norm) else "表示範囲外"
+                        self.info.configure(text=f"{model}  ·  ID 0x{value['who']:02X}  ·  I²C 0x{value['address']:02X}  ·  加速度合計 {norm_text}")
             state = stream_status(self.last_sample, now, self.sensor_error)
             labels = {"waiting": "接続中・データ待ち", "live": "●  受信中", "stale": "データ途絶（1秒以上）", "sensor_error": "センサー通信エラー"}
             text = "USB接続エラー・再接続待ち" if self.port_error else labels[state]
